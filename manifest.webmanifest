@@ -1,0 +1,17 @@
+{
+  "name": "Дикий Лось — дневник тренировок",
+  "short_name": "Дикий Лось",
+  "description": "Дневник силовых тренировок с синхронизацией в Google Таблицу",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1c1917",
+  "theme_color": "#1c1917",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
