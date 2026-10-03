@@ -122,6 +122,19 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
 .lib-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .card.edit{border-color:var(--accent)}
 
+/* техника выполнения */
+.link{background:none;border:0;padding:0;margin-top:4px;color:var(--accent-d);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.guide{margin-top:10px}
+.guide-imgs{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.guide-imgs figure{margin:0;flex:none;width:72%;max-width:260px;scroll-snap-align:start}
+.guide-imgs img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block;background:var(--card2);cursor:zoom-in}
+.guide-imgs figcaption{font-size:11.5px;color:var(--muted);text-align:center;margin-top:3px}
+.guide-tips{font-size:13px;margin:6px 0 0;padding-left:18px}
+.guide-tips li{margin-bottom:2px}
+.pack-ex{padding-top:10px;margin-top:10px;border-top:1px solid var(--line)}
+#zoom{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:110;display:flex;align-items:center;justify-content:center;padding:8px;cursor:zoom-out}
+#zoom img{max-width:100%;max-height:100%;border-radius:8px}
+
 /* таймер отдыха */
 #rest{position:fixed;left:12px;right:12px;bottom:calc(70px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;background:var(--head);color:#fff;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:8px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 #rest.over{background:var(--ok)}
@@ -290,6 +303,7 @@ nav.tabs button.active{color:var(--accent)}
   <button data-act="tab" data-tab="lib"><span class="ic">📚</span>База</button>
 </nav>
 
+<div id="zoom" data-act="zoom-close" hidden><img id="zoom-img" alt=""></div>
 <div id="modal" class="modal" hidden>
   <div class="mbox">
     <h3 id="m-title"></h3>
@@ -319,11 +333,33 @@ const METRICS = {
 const PERIODS = { '1m': ['Месяц', 30], '3m': ['3 мес', 90], '6m': ['Полгода', 180], '1y': ['Год', 365], 'all': ['Всё время', 0] };
 const MAX_AUTO_MIN = 240;
 
+// Готовые комплексы. Картинки — кадры из видео: img/<комплекс>/<n>-scheme|down|up.jpg
+const PACKS = [{
+  id: 'biceps-db', title: 'Бицепс (гантели)', source: 'по видео «Дикий Лось»',
+  exercises: [
+    { name: 'Подъём гантелей на бицепс стоя', group: 'Руки', reps: '4x30-40 сек', img: 'img/biceps/1',
+      desc: 'Обе руки одновременно, ладони вверх. Подход на время: 30–40 секунд без остановки. Отдых 60 сек.',
+      tips: ['Локти прижаты к корпусу и не уходят вперёд', 'Корпус не раскачивать', 'Внизу руки почти выпрямлены, вверху — короткая пауза'] },
+    { name: 'Подъём гантелей обратным хватом', group: 'Руки', reps: '3x10-12', img: 'img/biceps/2',
+      desc: 'Хват сверху, ладони смотрят вниз. Отдых 60 сек.',
+      tips: ['Кисть прямая, не заламывать', 'Локти неподвижны у корпуса', 'Вес меньше, чем в обычном подъёме'] },
+    { name: 'Молотки поочерёдно', group: 'Руки', reps: '3x15-20', img: 'img/biceps/3',
+      desc: 'Нейтральный хват: гантель вертикально, ладонь смотрит внутрь. Руки по очереди. Отдых 60 сек.',
+      tips: ['Гантель идёт к груди, плечо не поднимается', 'Локоть остаётся на месте', 'Опускать медленно, под контролем'] },
+    { name: 'Сгибание одной рукой в наклоне', group: 'Руки', reps: '2x15', img: 'img/biceps/4',
+      desc: 'Глубокий наклон, ноги широко, свободная рука упирается в колено. Рабочая рука висит вертикально вниз. Отдых 60 сек.',
+      tips: ['Двигается только предплечье, плечо неподвижно', 'Внизу руку выпрямлять полностью', 'Не помогать корпусом'] },
+    { name: 'Поочерёдный подъём гантелей сидя', group: 'Руки', reps: '2x15-20', img: 'img/biceps/5',
+      desc: 'Сидя на скамье или стуле, спина прямая. Руки по очереди, ладонь вверх. Отдых 60 сек.',
+      tips: ['Спина не отклоняется назад', 'Локоть не уводить вперёд', 'Вторая рука ждёт внизу'] }
+  ]
+}];
+
 const state = { library: [], presets: [], history: [] };
 const libIndex = { byId: new Map(), byName: new Map() };
 let draft = normDraft(loadLS(LS_DRAFT));
 const settings = Object.assign({ rest: 90, wake: true }, loadLS(LS_SET) || {});
-const ui = { tab: 'plan', logLimit: 30, progKey: '', progPeriod: 'all', progMetric: 'e1rm', effMetric: 'e1rm', chartPts: [], libEditId: '', presetEdit: null };
+const ui = { tab: 'plan', logLimit: 30, progKey: '', progPeriod: 'all', progMetric: 'e1rm', effMetric: 'e1rm', chartPts: [], libEditId: '', presetEdit: null, guides: new Set() };
 
 // ==================== Утилиты ====================
 const $ = id => document.getElementById(id);
@@ -562,6 +598,21 @@ function rebuildIndex() {
   libIndex.byName = new Map(state.library.map(e => [norm(e.name), e]));
 }
 
+// Техника выполнения из готовых комплексов — по названию упражнения
+function guideFor(name) {
+  const n = norm(name);
+  for (const p of PACKS) for (const x of p.exercises) if (norm(x.name) === n) return x;
+  return null;
+}
+function guideHtml(g) {
+  const shots = [['scheme', 'Схема'], ['down', 'Внизу'], ['up', 'Вверху']];
+  return '<div class="guide"><div class="guide-imgs">' + shots.map(([f, c]) =>
+    '<figure><img src="' + esc(g.img + '-' + f + '.jpg') + '" alt="' + esc(c) + '" loading="lazy" data-act="zoom"><figcaption>' + c + '</figcaption></figure>').join('') + '</div>' +
+    '<div class="small mt">' + esc(g.desc) + '</div>' +
+    '<ul class="guide-tips">' + g.tips.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
+}
+function toggleGuide(key) { if (ui.guides.has(key)) ui.guides.delete(key); else ui.guides.add(key); }
+
 // Ключ упражнения: по ID из базы, для старых записей — по совпадению названия
 function keyFor(libId, name) {
   if (libId && libIndex.byId.has(libId)) return 'id:' + libId;
@@ -630,6 +681,8 @@ function renderItem(it, idx) {
   const lp = lastPerf(itemKey(it));
   const lpSets = lp ? lp.d.sets : [];
   const done = it.sets.length > 0 && it.sets.every(s => s.done);
+  const g = guideFor(name);
+  const gOpen = g && ui.guides.has(it.id);
   const lastTxt = lp ? 'Прошлый раз, ' + fmtDShort(new Date(lp.w.ts)) + ': ' + lpSets.map(fmtSet).join(', ') : 'Ещё не выполнялось';
 
   const sets = it.sets.map((s, i) => {
@@ -650,10 +703,12 @@ function renderItem(it, idx) {
         '<div class="ex-name">' + (idx + 1) + '. ' + esc(name) + ' <span class="pill">' + esc(group) + '</span></div>' +
         '<div class="small muted">Цель: <input class="target" data-f="target" value="' + esc(it.target) + '"></div>' +
         '<div class="last">' + esc(lastTxt) + '</div>' +
+        (g ? '<button class="link" data-act="ex-guide">📷 Как делать ' + (gOpen ? '▴' : '▾') + '</button>' : '') +
       '</div>' +
       '<div class="ex-tools">' + (idx > 0 ? '<button class="x" data-act="ex-up" title="Поднять выше">↑</button>' : '') +
       '<button class="x" data-act="ex-del" title="Убрать из тренировки">×</button></div>' +
     '</div>' +
+    (gOpen ? guideHtml(g) : '') +
     '<div class="sets"><div class="set head"><div></div><div>кг</div><div>повт</div><div></div><div></div></div>' + sets + '</div>' +
     '<div class="row">' +
       '<button class="btn sm grow" data-act="set-add">+ Подход</button>' +
@@ -989,7 +1044,7 @@ function populateSelects() {
 function renderPresets() {
   renderPresetEditor();
   const list = $('preset-list');
-  if (!state.presets.length) { list.innerHTML = '<div class="card empty">Шаблонов пока нет. Создайте или сохраните тренировку из журнала кнопкой «В шаблон».</div>'; return; }
+  if (!state.presets.length) { list.innerHTML = '<div class="card empty">Шаблонов пока нет. Создайте или сохраните тренировку из журнала кнопкой «В шаблон».</div>' + renderPacks(); return; }
   list.innerHTML = state.presets.map(p => {
     const names = p.exercises.map(e => { const l = libIndex.byId.get(e.libId); return l ? l.name : null; }).filter(Boolean);
     const groups = Array.from(new Set(p.exercises.map(e => (libIndex.byId.get(e.libId) || {}).group).filter(Boolean)));
@@ -1000,7 +1055,35 @@ function renderPresets() {
         '<button class="btn sm" data-act="preset-edit" data-id="' + esc(p.id) + '">✏️</button>' +
         '<button class="btn sm danger" data-act="preset-del" data-id="' + esc(p.id) + '">🗑</button>' +
       '</div></div>';
+  }).join('') + renderPacks();
+}
+
+function renderPacks() {
+  return '<h2 class="mt mb">Готовые комплексы</h2>' + PACKS.map(p => {
+    const added = state.presets.some(x => norm(x.title) === norm(p.title));
+    const open = ui.guides.has('pack:' + p.id);
+    return '<div class="card"><div class="row between"><h3>' + esc(p.title) + '</h3><span class="pill">' + p.exercises.length + ' упр.</span></div>' +
+      '<div class="small muted mt">' + esc(p.source) + ' — ' + esc(p.exercises.map(x => x.name).join(', ')) + '</div>' +
+      '<div class="row mt">' +
+        (added ? '<span class="pill ok grow" style="text-align:center;padding:8px">✓ Уже в шаблонах</span>'
+               : '<button class="btn sm primary grow" data-act="pack-add" data-id="' + esc(p.id) + '">+ Добавить в шаблоны</button>') +
+        '<button class="btn sm" data-act="pack-guide" data-id="' + esc(p.id) + '">📷 Техника ' + (open ? '▴' : '▾') + '</button>' +
+      '</div>' +
+      (open ? p.exercises.map((x, i) => '<div class="pack-ex"><b>' + (i + 1) + '. ' + esc(x.name) + '</b> <span class="pill">' + esc(x.reps) + '</span>' + guideHtml(x) + '</div>').join('') : '') +
+      '</div>';
   }).join('');
+}
+
+function addPack(pack) {
+  let libChanged = false;
+  const exercises = pack.exercises.map(x => {
+    let e = libIndex.byName.get(norm(x.name));
+    if (!e) { e = { id: uid(), name: x.name, group: x.group, desc: x.desc }; state.library.push(e); libChanged = true; }
+    return { libId: e.id, reps: x.reps };
+  });
+  if (libChanged) { rebuildIndex(); enqueue('apiSyncLibrary', state.library); }
+  state.presets.push({ id: uid(), title: pack.title, isDefault: false, exercises });
+  syncPresets();
 }
 
 function renderPresetEditor() {
@@ -1044,10 +1127,13 @@ function renderLibrary() {
     '<div class="card"><div class="row between"><h3>' + esc(g) + '</h3><span class="pill">' + groups[g].length + '</span></div>' +
     groups[g].sort((a, b) => a.name.localeCompare(b.name, 'ru')).map(e => {
       const n = counts['id:' + e.id] || 0;
+      const g = guideFor(e.name), open = g && ui.guides.has('lib:' + e.id);
       return '<div class="lib-row"><div class="grow"><div><b>' + esc(e.name) + '</b>' + (n ? ' <span class="muted small">· ' + n + ' раз</span>' : '') + '</div>' +
-        (e.desc ? '<div class="small muted">' + esc(e.desc) + '</div>' : '') + '</div>' +
+        (e.desc ? '<div class="small muted">' + esc(e.desc) + '</div>' : '') +
+        (g ? '<button class="link" data-act="lib-guide" data-id="' + esc(e.id) + '">📷 Как делать ' + (open ? '▴' : '▾') + '</button>' : '') + '</div>' +
         '<button class="btn sm ghost" data-act="lib-edit" data-id="' + esc(e.id) + '">✏️</button>' +
-        '<button class="btn sm ghost" data-act="lib-del" data-id="' + esc(e.id) + '">🗑</button></div>';
+        '<button class="btn sm ghost" data-act="lib-del" data-id="' + esc(e.id) + '">🗑</button></div>' +
+        (open ? guideHtml(g) : '');
     }).join('') + '</div>').join('');
 }
 
@@ -1180,6 +1266,9 @@ const ACTIONS = {
     $('w-add').value = '';
     saveDraft(); renderPlan();
   },
+  'ex-guide': ({ it }) => { toggleGuide(it.id); rerenderItem(it); },
+  'zoom': ({ b }) => { $('zoom-img').src = b.getAttribute('src'); $('zoom').hidden = false; },
+  'zoom-close': () => { $('zoom').hidden = true; $('zoom-img').removeAttribute('src'); },
   'set-done': ({ it, si }) => {
     const s = it.sets[si]; if (!s) return;
     if (!s.done) {
@@ -1288,6 +1377,12 @@ const ACTIONS = {
   },
 
   // --- шаблоны ---
+  'pack-add': ({ b }) => {
+    const p = PACKS.find(x => x.id === b.dataset.id); if (!p) return;
+    addPack(p);
+    modal('Шаблон «' + p.title + '» добавлен, упражнения — в базе (группа «Руки»). Запустить его можно кнопкой «▶ Начать» или на вкладке «Тренировка».');
+  },
+  'pack-guide': ({ b }) => { toggleGuide('pack:' + b.dataset.id); renderPresets(); },
   'preset-new': () => { ui.presetEdit = { id: '', title: '', exercises: [] }; renderPresetEditor(); window.scrollTo(0, 0); },
   'preset-edit': ({ b }) => {
     const p = state.presets.find(x => x.id === b.dataset.id); if (!p) return;
@@ -1329,6 +1424,7 @@ const ACTIONS = {
   // --- база ---
   'lib-save': () => libSave(),
   'lib-cancel': () => libFormReset(),
+  'lib-guide': ({ b }) => { toggleGuide('lib:' + b.dataset.id); renderLibrary(); },
   'lib-edit': ({ b }) => {
     const e = libIndex.byId.get(b.dataset.id); if (!e) return;
     ui.libEditId = e.id;
