@@ -2,23 +2,18 @@
 // Стратегия «сначала из кэша, в фоне обновить»: новая версия с GitHub
 // подхватывается при следующем открытии. При заметных изменениях
 // увеличьте номер версии, чтобы очистить старый кэш.
-const CACHE = 'moose-v3.2';
+const CACHE = 'moose-v3.3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png',
   './img/biceps/1-scheme.jpg',
-  './img/biceps/1-down.jpg',
-  './img/biceps/1-up.jpg',
+  './img/biceps/1-move.webp',
   './img/biceps/2-scheme.jpg',
-  './img/biceps/2-down.jpg',
-  './img/biceps/2-up.jpg',
+  './img/biceps/2-move.webp',
   './img/biceps/3-scheme.jpg',
-  './img/biceps/3-down.jpg',
-  './img/biceps/3-up.jpg',
+  './img/biceps/3-move.webp',
   './img/biceps/4-scheme.jpg',
-  './img/biceps/4-down.jpg',
-  './img/biceps/4-up.jpg',
+  './img/biceps/4-move.webp',
   './img/biceps/5-scheme.jpg',
-  './img/biceps/5-down.jpg',
-  './img/biceps/5-up.jpg'];
+  './img/biceps/5-move.webp'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

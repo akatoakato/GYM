@@ -333,7 +333,7 @@ const METRICS = {
 const PERIODS = { '1m': ['Месяц', 30], '3m': ['3 мес', 90], '6m': ['Полгода', 180], '1y': ['Год', 365], 'all': ['Всё время', 0] };
 const MAX_AUTO_MIN = 240;
 
-// Готовые комплексы. Картинки — кадры из видео: img/<комплекс>/<n>-scheme|down|up.jpg
+// Готовые комплексы. Из видео: img/<комплекс>/<n>-move.webp (анимация повтора) и <n>-scheme.jpg (схема)
 const PACKS = [{
   id: 'biceps-db', title: 'Бицепс (гантели)', source: 'по видео «Дикий Лось»',
   exercises: [
@@ -605,9 +605,9 @@ function guideFor(name) {
   return null;
 }
 function guideHtml(g) {
-  const shots = [['scheme', 'Схема'], ['down', 'Внизу'], ['up', 'Вверху']];
+  const shots = [['move.webp', 'Движение'], ['scheme.jpg', 'Схема']];
   return '<div class="guide"><div class="guide-imgs">' + shots.map(([f, c]) =>
-    '<figure><img src="' + esc(g.img + '-' + f + '.jpg') + '" alt="' + esc(c) + '" loading="lazy" data-act="zoom"><figcaption>' + c + '</figcaption></figure>').join('') + '</div>' +
+    '<figure><img src="' + esc(g.img + '-' + f) + '" alt="' + esc(c) + '" loading="lazy" data-act="zoom"><figcaption>' + c + '</figcaption></figure>').join('') + '</div>' +
     '<div class="small mt">' + esc(g.desc) + '</div>' +
     '<ul class="guide-tips">' + g.tips.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
 }
