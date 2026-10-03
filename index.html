@@ -67,8 +67,6 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
 /* упражнение в тренировке */
 .ex.done{border-color:var(--ok);background:var(--ok-soft)}
 .ex-head{display:flex;gap:10px;align-items:flex-start}
-.check{width:30px;height:30px;border-radius:9px;border:2px solid var(--line);background:var(--card);flex:none;cursor:pointer;color:#fff;font-weight:900;font-size:16px;padding:0}
-.check.on{background:var(--ok);border-color:var(--ok)}
 .ex-name{font-weight:700;font-size:16px}
 .target{border:0;border-bottom:1px dashed var(--accent);background:transparent;padding:1px 0;min-height:0;width:110px;border-radius:0;color:var(--accent-d);font-weight:600}
 .target:focus{outline:none;border-bottom-style:solid}
@@ -586,7 +584,7 @@ function emptyDraft() { return { title: '', startedAt: 0, duration: '', items: [
 function normDraft(d) {
   if (!d || !Array.isArray(d.items)) return emptyDraft();
   d.items = d.items.filter(Boolean).map(it => ({
-    id: it.id || uid(), libId: String(it.libId || ''), name: String(it.name || ''), target: String(it.target || ''), done: !!it.done,
+    id: it.id || uid(), libId: String(it.libId || ''), name: String(it.name || ''), target: String(it.target || ''),
     sets: (Array.isArray(it.sets) && it.sets.length ? it.sets : [{}]).map(s => ({ weight: s.weight == null ? '' : String(s.weight), reps: s.reps == null ? '' : String(s.reps), done: !!s.done }))
   }));
   return Object.assign(emptyDraft(), d);
@@ -605,7 +603,7 @@ function parseSetCount(t) {
   return n >= 1 && n <= 10 ? n : 3;
 }
 function makeItem(libId, name, target) {
-  const it = { id: uid(), libId: libId || '', name: name || '', target: target || '', done: false, sets: [] };
+  const it = { id: uid(), libId: libId || '', name: name || '', target: target || '', sets: [] };
   const lp = lastPerf(itemKey(it));
   if (!it.target) it.target = (lp && lp.d.target) || '3x10';
   it.sets = newSets(target ? parseSetCount(target) : (lp ? lp.d.sets.length : parseSetCount(it.target)));
@@ -631,8 +629,7 @@ function renderItem(it, idx) {
   const group = lib ? lib.group : '—';
   const lp = lastPerf(itemKey(it));
   const lpSets = lp ? lp.d.sets : [];
-  const allDone = it.sets.length > 0 && it.sets.every(s => s.done);
-  const done = it.done || allDone;
+  const done = it.sets.length > 0 && it.sets.every(s => s.done);
   const lastTxt = lp ? 'Прошлый раз, ' + fmtDShort(new Date(lp.w.ts)) + ': ' + lpSets.map(fmtSet).join(', ') : 'Ещё не выполнялось';
 
   const sets = it.sets.map((s, i) => {
@@ -649,7 +646,6 @@ function renderItem(it, idx) {
 
   return '<div class="card ex' + (done ? ' done' : '') + '" data-id="' + esc(it.id) + '">' +
     '<div class="ex-head">' +
-      '<button class="check' + (done ? ' on' : '') + '" data-act="ex-done" aria-label="Упражнение выполнено">' + (done ? '✓' : '') + '</button>' +
       '<div class="grow">' +
         '<div class="ex-name">' + (idx + 1) + '. ' + esc(name) + ' <span class="pill">' + esc(group) + '</span></div>' +
         '<div class="small muted">Цель: <input class="target" data-f="target" value="' + esc(it.target) + '"></div>' +
@@ -714,12 +710,11 @@ async function saveWorkout() {
     const lib = libIndex.byId.get(it.libId);
     const sets = it.sets.filter(s => !isBlank(s.weight) || !isBlank(s.reps))
       .map(s => ({ weight: isBlank(s.weight) ? '' : num(s.weight), reps: isBlank(s.reps) ? '' : num(s.reps) }));
-    const done = it.done || it.sets.some(s => s.done) || sets.length > 0;
-    return done ? { libId: it.libId, name: lib ? lib.name : (it.name || 'Удалённое упражнение'), target: it.target, sets } : null;
+    return sets.length ? { libId: it.libId, name: lib ? lib.name : (it.name || 'Удалённое упражнение'), target: it.target, sets } : null;
   }).filter(Boolean);
 
   if (!draft.items.length) return modal('План пуст — нечего сохранять.');
-  if (!included.length) return modal('Заполните подходы или отметьте хотя бы одно упражнение выполненным.');
+  if (!included.length) return modal('Заполните вес или повторы хотя бы в одном подходе.');
 
   let duration = String(draft.duration || '').trim();
   if (!duration) {
@@ -1185,12 +1180,6 @@ const ACTIONS = {
     $('w-add').value = '';
     saveDraft(); renderPlan();
   },
-  'ex-done': ({ it }) => {
-    const wasDone = it.done || (it.sets.length && it.sets.every(s => s.done));
-    if (wasDone) { it.done = false; it.sets.forEach(s => { s.done = false; }); }
-    else { it.done = true; markStarted(); }
-    saveDraft(); rerenderItem(it);
-  },
   'set-done': ({ it, si }) => {
     const s = it.sets[si]; if (!s) return;
     if (!s.done) {
@@ -1201,7 +1190,7 @@ const ACTIONS = {
       }
       s.done = true; markStarted(); startRest();
     } else {
-      s.done = false; it.done = false;
+      s.done = false;
     }
     saveDraft(); rerenderItem(it);
   },

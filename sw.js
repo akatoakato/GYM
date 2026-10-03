@@ -2,7 +2,7 @@
 // Стратегия «сначала из кэша, в фоне обновить»: новая версия с GitHub
 // подхватывается при следующем открытии. При заметных изменениях
 // увеличьте номер версии, чтобы очистить старый кэш.
-const CACHE = 'moose-v3.0';
+const CACHE = 'moose-v3.1';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
