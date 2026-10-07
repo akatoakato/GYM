@@ -2,7 +2,7 @@
 // Стратегия «сначала из кэша, в фоне обновить»: новая версия с GitHub
 // подхватывается при следующем открытии. При заметных изменениях
 // увеличьте номер версии, чтобы очистить старый кэш.
-const CACHE = 'moose-v3.3';
+const CACHE = 'moose-v4.0';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png',
   './img/biceps/1-scheme.jpg',
   './img/biceps/1-move.webp',
